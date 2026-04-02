@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: auditai-postgres
+    environment:
+      POSTGRES_DB: auditai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: auditai-backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/auditai
+      DATABASE_ASYNC_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/auditai
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      DEBUG: "False"
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_DEFAULT_MODEL: nvidia/llama-3.1-nemotron-70b-instruct
+    volumes:
+      - ./backend:/app
+      - ./storage:/app/storage
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: auditai-frontend
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: auditai-network
