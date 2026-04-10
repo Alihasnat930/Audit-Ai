@@ -1,4 +1,6 @@
-Video link: https://youtu.be/0mtlrzyjk0A
+## 🎥 Project Demo
+
+[![Watch the Demo](https://img.youtube.com/vi/QHX9YqBC00Q/maxresdefault.jpg)](https://youtu.be/0mtlrzyjk0A) 
 # AuditAI - Enterprise Financial Fraud Detection & Risk Scoring Platform
 
 A comprehensive SaaS platform for real-time fraud detection, risk assessment, and financial audit management using machine learning and advanced anomaly detection.
